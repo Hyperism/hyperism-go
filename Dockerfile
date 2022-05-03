@@ -27,7 +27,7 @@ WORKDIR /app
 
 # `boilerplate` should be replaced here as well
 COPY --from=build /go/src/fiber-docker/server/app .
-
+COPY .env /app
 # Exposes port 3000 because our program listens on that port
 EXPOSE 3000
 
