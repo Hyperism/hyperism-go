@@ -7,7 +7,16 @@ git clone https://github.com/hyperism/hyperism-go
 cd hyperism-go
 go run server/main.go
 ```
+## on load docker
+cd hyperism-go
+docker-compose up
 
+## API USAGE
+GET localhost:3000/api/catchphrases
+GET localhost:3000/api/catchphrases/:id
+POST localhost:3000/api/catchphrases
+PATCH localhost:3000/api/catchphrases/:id
+DELETE localhost:3000/api/catchphrases/:id
 # Demo
 TBA..
 

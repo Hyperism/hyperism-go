@@ -1,43 +1,52 @@
 package main
 
 import (
-	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"log"
+	"os"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/joho/godotenv"
+	"github.com/mikefmeyer/catchphrase-go-mongodb-rest-api/config"
+	"github.com/mikefmeyer/catchphrase-go-mongodb-rest-api/routes"
 )
 
+func setupRoutes(app *fiber.App) {
+    app.Get("/", func(c *fiber.Ctx) error {
+        return c.Status(fiber.StatusOK).JSON(fiber.Map{
+            "success":     true,
+            "message":     "You are at the root endpoint ?",
+            "github_repo": "https://github.com/MikeFMeyer/catchphrase-go-mongodb-rest-api",
+        })
+    })
+
+    api := app.Group("/api")
+
+    routes.CatchphrasesRoute(api.Group("/catchphrases"))
+}
+
 func main() {
-	app := fiber.New()
+    if os.Getenv("APP_ENV") != "production" {
+        err := godotenv.Load()
+        if err != nil {
+            log.Fatal("Error loading .env file")
+        }
+    }
 
-	// GET /api/register
-	app.Get("/api/*", func(c *fiber.Ctx) error {
-		msg := fmt.Sprintf("✋ %s", c.Params("*"))
-		return c.SendString(msg) // => ✋ register
-	})
+    app := fiber.New()
 
-	// GET /flights/LAX-SFO
-	app.Get("/flights/:from-:to", func(c *fiber.Ctx) error {
-		msg := fmt.Sprintf("💸 From: %s, To: %s", c.Params("from"), c.Params("to"))
-		return c.SendString(msg) // => 💸 From: LAX, To: SFO
-	})
+    app.Use(cors.New())
+    app.Use(logger.New())
 
-	// GET /dictionary.txt
-	app.Get("/:file.:ext", func(c *fiber.Ctx) error {
-		msg := fmt.Sprintf("📃 %s.%s", c.Params("file"), c.Params("ext"))
-		return c.SendString(msg) // => 📃 dictionary.txt
-	})
+    config.ConnectDB()
 
-	// GET /john/75
-	app.Get("/:name/:age/:gender?", func(c *fiber.Ctx) error {
-		msg := fmt.Sprintf("👴 %s is %s years old", c.Params("name"), c.Params("age"))
-		return c.SendString(msg) // => 👴 john is 75 years old
-	})
+    setupRoutes(app)
 
-	// GET /john
-	app.Get("/:name", func(c *fiber.Ctx) error {
-		msg := fmt.Sprintf("Hello, %s 👋!", c.Params("name"))
-		return c.SendString(msg) // => Hello john 👋!
-	})
+    port := "3000"
+    err := app.Listen(":" + port)
 
-	log.Fatal(app.Listen(":3000"))
+    if err != nil {
+        log.Fatal("Error app failed to start")
+        panic(err)
+    }
 }
