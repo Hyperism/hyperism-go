@@ -1,4 +1,8 @@
 # hyperism-go
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![GolangCI Lint github action](https://github.com/hyperism/hyperism-go/actions/workflows/golangci-lint.yml/badge.svg?branch=main)
+
 Backend REST-api server for hyperism 
 
 ## Quick Overview
