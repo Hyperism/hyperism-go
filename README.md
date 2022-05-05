@@ -2,21 +2,46 @@
 Backend REST-api server for hyperism 
 
 ## Quick Overview
+
+### Step 1. Deploy REST API, Database and IPFS
 ```bash
 git clone https://github.com/hyperism/hyperism-go
 cd hyperism-go
-go run server/main.go
+docker-compose up -d
 ```
-## on load docker
-cd hyperism-go
-docker-compose up
 
-## API USAGE
+### Step 2. Private IPFS Peer-to-Server Setup
+```bash
+# Enter Server bash
+docker exec -it server.hyperism.com bash
+ipfs bootstrap rm --all
+ipfs id -f='<addrs>' # Keep ipfs address except 127.0.0.1
+exit
+# Enter Peer bash
+docker exec -it peer.hyperism.com bash
+ipfs bootstrap rm --all
+ipfs id -f='<addrs>' # Keep ipfs address except 127.0.0.1
+ipfs bootstrap add <server ipfs address>
+exit
+# Enter Server bash
+docker exec -it server.hyperism.com bash
+ipfs bootstrap add <peer ipfs address>
+exit
+# Local bash
+cd swarmkeygen && go run . generate > ../ipfs/swarm.key && cd ..
+docker cp ipfs/swarm.key server.hyperism.com:/var/ipfsfb
+docker cp ipfs/swarm.key peer.hyperism.com:/var/ipfsfb
+docker-compose restart
+# Check IPFS demo
+./ipfs/e2e/test.sh p2s server.hyperism.com peer.hyperism.com
+```
+### Step 3. Rest API Usage
 GET localhost:3000/api/catchphrases
 GET localhost:3000/api/catchphrases/:id
 POST localhost:3000/api/catchphrases
 PATCH localhost:3000/api/catchphrases/:id
 DELETE localhost:3000/api/catchphrases/:id
+
 # Demo
 TBA..
 

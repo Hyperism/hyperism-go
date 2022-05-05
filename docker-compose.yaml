@@ -1,4 +1,15 @@
 version: '3'
+
+volumes:
+  peer.hyperism.com:
+  server.hyperism.com:
+
+networks:
+  hyperism_net:
+    ipam:
+      config:
+        - subnet: ${PUBLIC_DATA_NETWORKS}
+
 services:
 
   # MongoDB
@@ -13,6 +24,8 @@ services:
     # env_file:
     #   - .env
     restart: always
+    networks:
+      - hyperism_net
   
   # Fiber
   fiber:
@@ -28,3 +41,32 @@ services:
     depends_on:
       - mongo_db
     restart: always
+    networks:
+      - hyperism_net
+  
+  peer.hyperism.com:
+    extends:
+      file: ipfs/docker-compose-p2s.yaml
+      service: peer.hyperism.com
+    container_name: peer.hyperism.com
+    networks:
+      - hyperism_net
+
+  server.hyperism.com:
+    extends:
+      file: ipfs/docker-compose-p2s.yaml
+      service: server.hyperism.com
+    container_name: server.hyperism.com
+    networks:
+      - hyperism_net
+
+  cli:
+    extends:
+      file: ipfs/docker-compose-cli.yaml
+      service: cli
+    working_dir: /opt/gopath/src/github.com/IBM/IPFSfB/p2s/cli
+    depends_on:
+      - peer.hyperism.com
+      - server.hyperism.com
+    networks:
+      - hyperism_net
