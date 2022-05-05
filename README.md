@@ -36,11 +36,13 @@ docker-compose restart
 ./ipfs/e2e/test.sh p2s server.hyperism.com peer.hyperism.com
 ```
 ### Step 3. Rest API Usage
+```bash
 GET localhost:3000/api/catchphrases
 GET localhost:3000/api/catchphrases/:id
 POST localhost:3000/api/catchphrases
 PATCH localhost:3000/api/catchphrases/:id
 DELETE localhost:3000/api/catchphrases/:id
+```
 
 # Demo
 TBA..
