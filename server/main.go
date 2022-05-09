@@ -3,26 +3,25 @@ package main
 import (
 	"log"
 	"os"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/hyperism/hyperism-go/config"
+	"github.com/hyperism/hyperism-go/routes"
 	"github.com/joho/godotenv"
-	"github.com/mikefmeyer/catchphrase-go-mongodb-rest-api/config"
-	"github.com/mikefmeyer/catchphrase-go-mongodb-rest-api/routes"
 )
 
 func setupRoutes(app *fiber.App) {
     app.Get("/", func(c *fiber.Ctx) error {
         return c.Status(fiber.StatusOK).JSON(fiber.Map{
             "success":     true,
-            "message":     "You are at the root endpoint ?",
+            "message":     "test ?",
             "github_repo": "https://github.com/MikeFMeyer/catchphrase-go-mongodb-rest-api",
         })
     })
 
-    api := app.Group("/api")
-
-    routes.CatchphrasesRoute(api.Group("/catchphrases"))
+    // api := app.Group("/api")
 }
 
 func main() {
@@ -42,6 +41,7 @@ func main() {
 
     setupRoutes(app)
 
+    routes.Meta(app)
     port := "3000"
     err := app.Listen(":" + port)
 
