@@ -41,11 +41,20 @@ docker-compose restart
 ```
 ### Step 3. Rest API Usage
 ```bash
-GET localhost:3000/api/catchphrases
-GET localhost:3000/api/catchphrases/:id
-POST localhost:3000/api/catchphrases
-PATCH localhost:3000/api/catchphrases/:id
-DELETE localhost:3000/api/catchphrases/:id
+GET     localhost:3000/
+POST    localhost:3000/signup
+POST    localhost:3000/loginin
+
+# commands under this
+# needs bearer token to execute
+GET     localhost:3000/meta
+GET     localhost:3000/meta/:id
+POST    localhost:3000/meta
+PUT     localhost:3000/meta/:id
+DELETE  localhost:3000/meta/:id
+
+
+
 ```
 
 # Demo
