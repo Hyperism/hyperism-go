@@ -33,7 +33,7 @@ func Meta(route fiber.Router) {
     // from here
     // we need to add bearer token
     meta.Get("/", controllers.GetAllMeta)
-    meta.Get("/:id", controllers.GetMeta)
+    meta.Get("/:owner", controllers.GetMeta)
     meta.Post("/", controllers.AddMeta)
     meta.Put("/:id", controllers.UpdateMeta)
     meta.Delete("/:id", controllers.DeleteMeta)

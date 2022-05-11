@@ -29,28 +29,28 @@ func GetAllMeta(c *fiber.Ctx) error {
     filter := bson.M{}
     findOptions := options.Find()
 
-    if s := c.Query("s"); s != "" {
-        filter = bson.M{
-            "$or": []bson.M{
-                {
-                    "owner": bson.M{
-                        "$regex": primitive.Regex{
-                            Pattern: s,
-                            Options: "i",
-                        },
-                    },
-                },
-                {
-                    "price": bson.M{
-                        "$regex": primitive.Regex{
-                            Pattern: s,
-                            Options: "i",
-                        },
-                    },
-                },
-            },
-        }
-    }
+    // if s := c.Query("s"); s != "" {
+    //     filter = bson.M{
+    //         "$or": []bson.M{
+    //             {
+    //                 "owner": bson.M{
+    //                     "$regex": primitive.Regex{
+    //                         Pattern: s,
+    //                         Options: "i",
+    //                     },
+    //                 },
+    //             },
+    //             {
+    //                 "price": bson.M{
+    //                     "$regex": primitive.Regex{
+    //                         Pattern: s,
+    //                         Options: "i",
+    //                     },
+    //                 },
+    //             },
+    //         },
+    //     }
+    // }
 
     page, _ := strconv.Atoi(c.Query("page", "1"))
     limitVal, _ := strconv.Atoi(c.Query("limit", "10"))
@@ -93,21 +93,55 @@ func GetAllMeta(c *fiber.Ctx) error {
 }
 
 func GetMeta(c *fiber.Ctx) error {
+    // metaCollection := config.MI.DB.Collection("meta")
+    // ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+
+    // var metadata models.Meta
+    // objId, err := primitive.ObjectIDFromHex(c.Params("id"))
+    // findResult := metaCollection.FindOne(ctx, bson.M{"_id": objId})
+    // if err := findResult.Err(); err != nil {
+    //     return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+    //         "success": false,
+    //         "message": "meta Not found",
+    //         "error":   err,
+    //     })
+    // }
+   
+    // err = findResult.Decode(&metadata)
+    // if err != nil {
+    //     return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+    //         "success": false,
+    //         "message": "meta Not found",
+    //         "error":   err,
+    //     })
+    // }
+
+    // return c.Status(fiber.StatusOK).JSON(fiber.Map{
+    //     "data":    metadata,
+    //     "success": true,
+    // })
     metaCollection := config.MI.DB.Collection("meta")
     ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
-    var metadata models.Meta
-    objId, err := primitive.ObjectIDFromHex(c.Params("id"))
-    findResult := metaCollection.FindOne(ctx, bson.M{"_id": objId})
-    if err := findResult.Err(); err != nil {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "success": false,
-            "message": "meta Not found",
-            "error":   err,
-        })
-    }
-   
-    err = findResult.Decode(&metadata)
+    var meta []models.Meta
+
+    owner := c.Params("owner")
+
+    filter := bson.M{"owner": owner}
+    findOptions := options.Find()
+
+    page, _ := strconv.Atoi(c.Query("page", "1"))
+    limitVal, _ := strconv.Atoi(c.Query("limit", "10"))
+    var limit int64 = int64(limitVal)
+
+    total, _ := metaCollection.CountDocuments(ctx, filter)
+
+    findOptions.SetSkip((int64(page) - 1) * limit)
+    findOptions.SetLimit(limit)
+
+    cursor, err := metaCollection.Find(ctx, filter, findOptions)
+    defer cursor.Close(ctx)
+
     if err != nil {
         return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
             "success": false,
@@ -116,10 +150,25 @@ func GetMeta(c *fiber.Ctx) error {
         })
     }
 
+    for cursor.Next(ctx) {
+        var metadata models.Meta
+        cursor.Decode(&metadata)
+        meta = append(meta, metadata)
+    }
+
+    last := math.Ceil(float64(total / limit))
+    if last < 1 && total > 0 {
+        last = 1
+    }
+
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "data":    metadata,
-        "success": true,
+        "data":      meta,
+        "total":     total,
+        "page":      page,
+        "last_page": last,
+        "limit":     limit,
     })
+
 }
 
 func AddMeta(c *fiber.Ctx) error {
