@@ -135,7 +135,8 @@ func AddMeta(c *fiber.Ctx) error {
             "error":   err,
         })
     }
-
+    meta.MintDate = time.Now()
+    
     result, err := metaDataCollection.InsertOne(ctx, meta)
     if err != nil {
         return c.Status(500).JSON(fiber.Map{
