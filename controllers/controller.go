@@ -1,23 +1,26 @@
 package controllers
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
 	"math"
+	"net/http"
+	"os"
 	"strconv"
 	"time"
-    "net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/hyperism/hyperism-go/config"
 	"github.com/hyperism/hyperism-go/models"
 	"github.com/hyperism/hyperism-go/utix"
+	shell "github.com/ipfs/go-ipfs-api"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-    "github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 func GetAllMeta(c *fiber.Ctx) error {
@@ -473,4 +476,19 @@ func GetByID(key string, value string) (models.User, error) {
 
 	return res, err
 
+}
+
+func Upload(c *fiber.Ctx) error {
+    sh := shell.NewShell("localhost:5001")
+
+    file, err := c.FormFile("test")
+    c.SaveFile(file, fmt.Sprintf("./%s", file.Filename))
+    
+    // fmt.Printf("./%s \n", file.Filename)
+    
+    f, _ := os.Open(file.Filename)
+    cid, _ := sh.Add(bufio.NewReader(f))
+    // fmt.Print(f)
+    fmt.Printf("added %s\n", cid)
+    return err
 }

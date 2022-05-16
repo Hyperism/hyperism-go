@@ -37,4 +37,6 @@ func Meta(route fiber.Router) {
     meta.Post("/", controllers.AddMeta)
     meta.Put("/:id", controllers.UpdateMeta)
     meta.Delete("/:id", controllers.DeleteMeta)
+    
+    meta.Post("/upload", controllers.Upload)
 }
