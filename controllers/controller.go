@@ -7,7 +7,7 @@ import (
 	"log"
 	"math"
 	"net/http"
-	"os"
+	// "os"
 	"strconv"
 	"time"
 
@@ -479,16 +479,18 @@ func GetByID(key string, value string) (models.User, error) {
 }
 
 func Upload(c *fiber.Ctx) error {
-    sh := shell.NewShell("localhost:5001")
+    sh := shell.NewShell("ipfs0:5001")
 
-    file, err := c.FormFile("test")
-    c.SaveFile(file, fmt.Sprintf("./%s", file.Filename))
+    file, _ := c.FormFile("test")
+    // "test" is key, so modify it
+    // c.SaveFile(file, fmt.Sprintf("./%s", file.Filename))
     
-    // fmt.Printf("./%s \n", file.Filename)
+    fmt.Printf("./%s \n", file.Filename)
     
-    f, _ := os.Open(file.Filename)
+    f, _ := file.Open()
     cid, _ := sh.Add(bufio.NewReader(f))
-    // fmt.Print(f)
+    fmt.Println(f)
+    fmt.Println(cid)
     fmt.Printf("added %s\n", cid)
-    return err
+    return c.SendString(cid)
 }

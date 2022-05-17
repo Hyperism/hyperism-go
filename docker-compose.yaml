@@ -36,17 +36,22 @@ services:
       DB_NAME: my_db
     depends_on:
       - mongo_db
+      - ipfs0
     restart: always
     networks:
       - hyperism_net
   
   ipfs0:
     container_name: ipfs0
-    image: ipfs/go-ipfs:latest
+    image: ipfs/go-ipfs
+    environment:
+      PORT: 5001
     ports:
-#     - "4001:4001" # ipfs swarm - expose if needed/wanted
-      - "5001:5001" # ipfs api - expose if needed/wanted
-      - "8080:8080" # ipfs gateway - expose if needed/wanted
+      # - 4001:4001 # ipfs swarm - expose if needed/wanted
+      - 5001:5001 # ipfs api - expose if needed/wanted
+      - 8080:8080 # ipfs gateway - expose if needed/wanted
     volumes:
       - ./compose/ipfs0:/data/ipfs
+    networks:
+      - hyperism_net
       
