@@ -12,12 +12,13 @@ import (
 )
 
 func Meta(route fiber.Router) {
+    api := route.Group("/api")
 
     secret := os.Getenv("JWT_SECRET_KEY")
-	route.Post("/SignUp", auth.SignUp)
-	route.Post("/LoginIn", auth.Login)
+	api.Post("/SignUp", auth.SignUp)
+	api.Post("/LoginIn", auth.Login)
 
-	meta := route.Group("/meta")
+	meta := api.Group("/meta")
 	meta.Use(jwtware.New(jwtware.Config{
 		SigningKey:    []byte(secret),
 		SigningMethod: "HS256",
@@ -38,5 +39,5 @@ func Meta(route fiber.Router) {
     meta.Put("/:id", controllers.UpdateMeta)
     meta.Delete("/:id", controllers.DeleteMeta)
 
-    meta.Post("/upload", controllers.Upload)
+    meta.Post("/getshader/:id", controllers.GetShader)
 }

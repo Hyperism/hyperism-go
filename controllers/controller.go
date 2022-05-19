@@ -1,12 +1,18 @@
 package controllers
 
 import (
-	"bufio"
+	// "bufio"
 	"context"
 	"fmt"
 	"log"
 	"math"
 	"net/http"
+	// "os"
+
+	// "os"
+	"io/ioutil"
+	"strings"
+
 	// "os"
 	"strconv"
 	"time"
@@ -175,6 +181,12 @@ func GetMeta(c *fiber.Ctx) error {
 }
 
 func AddMeta(c *fiber.Ctx) error {
+    sh := shell.NewShell("ipfs0:5001")
+    shadercode := c.FormValue("shader")
+    // "shader" is key, and value should be shader code
+    
+    cid, _ := sh.Add(strings.NewReader(shadercode))
+
     metaDataCollection := config.MI.DB.Collection("meta")
     ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
     meta := new(models.Meta)
@@ -188,7 +200,8 @@ func AddMeta(c *fiber.Ctx) error {
         })
     }
     meta.MintDate = time.Now()
-    
+    meta.IpfsHash = cid
+    fmt.Println(cid)
     result, err := metaDataCollection.InsertOne(ctx, meta)
     if err != nil {
         return c.Status(500).JSON(fiber.Map{
@@ -478,19 +491,41 @@ func GetByID(key string, value string) (models.User, error) {
 
 }
 
-func Upload(c *fiber.Ctx) error {
+func GetShader(c *fiber.Ctx) error {
     sh := shell.NewShell("ipfs0:5001")
+    //
+    metaCollection := config.MI.DB.Collection("meta")
+    ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
-    file, _ := c.FormFile("test")
-    // "test" is key, so modify it
-    // c.SaveFile(file, fmt.Sprintf("./%s", file.Filename))
+    var metadata models.Meta
+    objId, err := primitive.ObjectIDFromHex(c.Params("id"))
+    findResult := metaCollection.FindOne(ctx, bson.M{"_id": objId})
+    if err := findResult.Err(); err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "success": false,
+            "message": "meta Not found",
+            "error":   err,
+        })
+    }
+   
+    err = findResult.Decode(&metadata)
+    if err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "success": false,
+            "message": "meta Not found",
+            "error":   err,
+        })
+    }
+
+    cid := metadata.IpfsHash
+    sh.Get(cid,".")
+    f, _ := ioutil.ReadFile(cid)
     
-    fmt.Printf("./%s \n", file.Filename)
     
-    f, _ := file.Open()
-    cid, _ := sh.Add(bufio.NewReader(f))
-    fmt.Println(f)
-    fmt.Println(cid)
-    fmt.Printf("added %s\n", cid)
-    return c.SendString(cid)
+   
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "owner":    metadata.Owner,
+        "minter":   metadata.Minter,
+        "shader":   string(f),
+    })
 }
