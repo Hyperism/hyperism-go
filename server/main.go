@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"os"
+    _"fmt"
+    _"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -10,6 +12,8 @@ import (
 	"github.com/hyperism/hyperism-go/config"
 	"github.com/hyperism/hyperism-go/routes"
 	"github.com/joho/godotenv"
+
+    // shell "github.com/ipfs/go-ipfs-api"
 )
 
 func setupRoutes(app *fiber.App) {
@@ -45,8 +49,10 @@ func main() {
     port := "3000"
     err := app.Listen(":" + port)
 
+    
     if err != nil {
         log.Fatal("Error app failed to start")
         panic(err)
     }
+
 }

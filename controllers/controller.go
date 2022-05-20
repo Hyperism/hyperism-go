@@ -1,23 +1,32 @@
 package controllers
 
 import (
+	// "bufio"
 	"context"
 	"fmt"
 	"log"
 	"math"
+	"net/http"
+	// "os"
+
+	// "os"
+	"io/ioutil"
+	"strings"
+
+	// "os"
 	"strconv"
 	"time"
-    "net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/hyperism/hyperism-go/config"
 	"github.com/hyperism/hyperism-go/models"
 	"github.com/hyperism/hyperism-go/utix"
+	shell "github.com/ipfs/go-ipfs-api"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-    "github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 func GetAllMeta(c *fiber.Ctx) error {
@@ -29,28 +38,28 @@ func GetAllMeta(c *fiber.Ctx) error {
     filter := bson.M{}
     findOptions := options.Find()
 
-    if s := c.Query("s"); s != "" {
-        filter = bson.M{
-            "$or": []bson.M{
-                {
-                    "owner": bson.M{
-                        "$regex": primitive.Regex{
-                            Pattern: s,
-                            Options: "i",
-                        },
-                    },
-                },
-                {
-                    "price": bson.M{
-                        "$regex": primitive.Regex{
-                            Pattern: s,
-                            Options: "i",
-                        },
-                    },
-                },
-            },
-        }
-    }
+    // if s := c.Query("s"); s != "" {
+    //     filter = bson.M{
+    //         "$or": []bson.M{
+    //             {
+    //                 "owner": bson.M{
+    //                     "$regex": primitive.Regex{
+    //                         Pattern: s,
+    //                         Options: "i",
+    //                     },
+    //                 },
+    //             },
+    //             {
+    //                 "price": bson.M{
+    //                     "$regex": primitive.Regex{
+    //                         Pattern: s,
+    //                         Options: "i",
+    //                     },
+    //                 },
+    //             },
+    //         },
+    //     }
+    // }
 
     page, _ := strconv.Atoi(c.Query("page", "1"))
     limitVal, _ := strconv.Atoi(c.Query("limit", "10"))
@@ -93,21 +102,55 @@ func GetAllMeta(c *fiber.Ctx) error {
 }
 
 func GetMeta(c *fiber.Ctx) error {
+    // metaCollection := config.MI.DB.Collection("meta")
+    // ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+
+    // var metadata models.Meta
+    // objId, err := primitive.ObjectIDFromHex(c.Params("id"))
+    // findResult := metaCollection.FindOne(ctx, bson.M{"_id": objId})
+    // if err := findResult.Err(); err != nil {
+    //     return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+    //         "success": false,
+    //         "message": "meta Not found",
+    //         "error":   err,
+    //     })
+    // }
+   
+    // err = findResult.Decode(&metadata)
+    // if err != nil {
+    //     return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+    //         "success": false,
+    //         "message": "meta Not found",
+    //         "error":   err,
+    //     })
+    // }
+
+    // return c.Status(fiber.StatusOK).JSON(fiber.Map{
+    //     "data":    metadata,
+    //     "success": true,
+    // })
     metaCollection := config.MI.DB.Collection("meta")
     ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
-    var metadata models.Meta
-    objId, err := primitive.ObjectIDFromHex(c.Params("id"))
-    findResult := metaCollection.FindOne(ctx, bson.M{"_id": objId})
-    if err := findResult.Err(); err != nil {
-        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "success": false,
-            "message": "meta Not found",
-            "error":   err,
-        })
-    }
-   
-    err = findResult.Decode(&metadata)
+    var meta []models.Meta
+
+    owner := c.Params("owner")
+
+    filter := bson.M{"owner": owner}
+    findOptions := options.Find()
+
+    page, _ := strconv.Atoi(c.Query("page", "1"))
+    limitVal, _ := strconv.Atoi(c.Query("limit", "10"))
+    var limit int64 = int64(limitVal)
+
+    total, _ := metaCollection.CountDocuments(ctx, filter)
+
+    findOptions.SetSkip((int64(page) - 1) * limit)
+    findOptions.SetLimit(limit)
+
+    cursor, err := metaCollection.Find(ctx, filter, findOptions)
+    defer cursor.Close(ctx)
+
     if err != nil {
         return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
             "success": false,
@@ -116,13 +159,34 @@ func GetMeta(c *fiber.Ctx) error {
         })
     }
 
+    for cursor.Next(ctx) {
+        var metadata models.Meta
+        cursor.Decode(&metadata)
+        meta = append(meta, metadata)
+    }
+
+    last := math.Ceil(float64(total / limit))
+    if last < 1 && total > 0 {
+        last = 1
+    }
+
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "data":    metadata,
-        "success": true,
+        "data":      meta,
+        "total":     total,
+        "page":      page,
+        "last_page": last,
+        "limit":     limit,
     })
+
 }
 
 func AddMeta(c *fiber.Ctx) error {
+    sh := shell.NewShell("ipfs0:5001")
+    shadercode := c.FormValue("shader")
+    // "shader" is key, and value should be shader code
+    
+    cid, _ := sh.Add(strings.NewReader(shadercode))
+
     metaDataCollection := config.MI.DB.Collection("meta")
     ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
     meta := new(models.Meta)
@@ -135,7 +199,9 @@ func AddMeta(c *fiber.Ctx) error {
             "error":   err,
         })
     }
-
+    meta.MintDate = time.Now()
+    meta.IpfsHash = cid
+    fmt.Println(cid)
     result, err := metaDataCollection.InsertOne(ctx, meta)
     if err != nil {
         return c.Status(500).JSON(fiber.Map{
@@ -423,4 +489,43 @@ func GetByID(key string, value string) (models.User, error) {
 
 	return res, err
 
+}
+
+func GetShader(c *fiber.Ctx) error {
+    sh := shell.NewShell("ipfs0:5001")
+    //
+    metaCollection := config.MI.DB.Collection("meta")
+    ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+
+    var metadata models.Meta
+    objId, err := primitive.ObjectIDFromHex(c.Params("id"))
+    findResult := metaCollection.FindOne(ctx, bson.M{"_id": objId})
+    if err := findResult.Err(); err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "success": false,
+            "message": "meta Not found",
+            "error":   err,
+        })
+    }
+   
+    err = findResult.Decode(&metadata)
+    if err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "success": false,
+            "message": "meta Not found",
+            "error":   err,
+        })
+    }
+
+    cid := metadata.IpfsHash
+    sh.Get(cid,".")
+    f, _ := ioutil.ReadFile(cid)
+    
+    
+   
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "owner":    metadata.Owner,
+        "minter":   metadata.Minter,
+        "shader":   string(f),
+    })
 }

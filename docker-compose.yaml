@@ -18,11 +18,8 @@ services:
     image: mongo
     ports: 
       - 27017:27017
-    #   - "${MONGO_PORT}:27017"
     volumes:
       - ./mongodb:/data/db
-    # env_file:
-    #   - .env
     restart: always
     networks:
       - hyperism_net
@@ -37,36 +34,24 @@ services:
       PORT: 3000
       MONGO_URI: mongodb://mongo_db:27017
       DB_NAME: my_db
-    #   NAME: Truly Mittal
     depends_on:
       - mongo_db
+      - ipfs0
     restart: always
     networks:
       - hyperism_net
   
-  peer.hyperism.com:
-    extends:
-      file: ipfs/docker-compose-p2s.yaml
-      service: peer.hyperism.com
-    container_name: peer.hyperism.com
+  ipfs0:
+    container_name: ipfs0
+    image: ipfs/go-ipfs
+    environment:
+      PORT: 5001
+    ports:
+      # - 4001:4001 # ipfs swarm - expose if needed/wanted
+      - 5001:5001 # ipfs api - expose if needed/wanted
+      - 8080:8080 # ipfs gateway - expose if needed/wanted
+    volumes:
+      - ./compose/ipfs0:/data/ipfs
     networks:
       - hyperism_net
-
-  server.hyperism.com:
-    extends:
-      file: ipfs/docker-compose-p2s.yaml
-      service: server.hyperism.com
-    container_name: server.hyperism.com
-    networks:
-      - hyperism_net
-
-  cli:
-    extends:
-      file: ipfs/docker-compose-cli.yaml
-      service: cli
-    working_dir: /opt/gopath/src/github.com/IBM/IPFSfB/p2s/cli
-    depends_on:
-      - peer.hyperism.com
-      - server.hyperism.com
-    networks:
-      - hyperism_net
+      
