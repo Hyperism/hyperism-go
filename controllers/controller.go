@@ -101,7 +101,41 @@ func GetAllMeta(c *fiber.Ctx) error {
     })
 }
 
-func GetMeta(c *fiber.Ctx) error {
+func GetMetaId(c *fiber.Ctx) error {
+    fmt.Println("FCK")
+    metaCollection := config.MI.DB.Collection("meta")
+    ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+
+    var metadata models.Meta
+
+    objId, err := primitive.ObjectIDFromHex(c.Params("id"))
+    findResult := metaCollection.FindOne(ctx, bson.M{"_id": objId})
+    fmt.Println(objId)
+    fmt.Println(findResult)
+    if err := findResult.Err(); err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "success": false,
+            "message": "meta Not found",
+            "error":   err,
+        })
+    }
+   
+    err = findResult.Decode(&metadata)
+    if err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "success": false,
+            "message": "meta Not found",
+            "error":   err,
+        })
+    }
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "data":    metadata,
+        "success": true,
+    })
+}
+
+func GetMetaOwner(c *fiber.Ctx) error {
     // metaCollection := config.MI.DB.Collection("meta")
     // ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
@@ -169,7 +203,6 @@ func GetMeta(c *fiber.Ctx) error {
     if last < 1 && total > 0 {
         last = 1
     }
-
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
         "data":      meta,
         "total":     total,
