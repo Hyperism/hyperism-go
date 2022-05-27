@@ -562,3 +562,161 @@ func GetShader(c *fiber.Ctx) error {
         "shader":   string(f),
     })
 }
+
+func SaveMst_Id(c *fiber.Ctx) error {
+    mst_idDataCollection := config.MI.DB.Collection("mst_id")
+    ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+    mst_id := new(models.Mst_Id)
+
+    if err := c.BodyParser(mst_id); err != nil {
+        log.Println(err)
+        return c.Status(400).JSON(fiber.Map{
+            "success": false,
+            "message": "Failed to parse body",
+            "error":   err,
+        })
+    }
+    result, err := mst_idDataCollection.InsertOne(ctx, mst_id)
+    if err != nil {
+        return c.Status(500).JSON(fiber.Map{
+            "success": false,
+            "message": "meta failed to insert",
+            "error":   err,
+        })
+    }
+    return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+        "data":    result,
+        "success": true,
+        "message": "mst inserted successfully",
+    })
+}
+
+func GetMstbyId(c *fiber.Ctx) error {
+    mst_idDataCollection := config.MI.DB.Collection("mst_id")
+    ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+
+    var mst_id []models.Mst_Id
+
+    id := c.Params("id")
+
+    filter := bson.M{"id": id}
+    findOptions := options.Find()
+
+    page, _ := strconv.Atoi(c.Query("page", "1"))
+    limitVal, _ := strconv.Atoi(c.Query("limit", "10"))
+    var limit int64 = int64(limitVal)
+
+    total, _ := mst_idDataCollection.CountDocuments(ctx, filter)
+
+    findOptions.SetSkip((int64(page) - 1) * limit)
+    findOptions.SetLimit(limit)
+
+    cursor, err := mst_idDataCollection.Find(ctx, filter, findOptions)
+    defer cursor.Close(ctx)
+
+    if err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "success": false,
+            "message": "mst Not found",
+            "error":   err,
+        })
+    }
+
+    for cursor.Next(ctx) {
+        var mstiddata models.Mst_Id
+        cursor.Decode(&mstiddata)
+        mst_id = append(mst_id, mstiddata)
+    }
+
+    last := math.Ceil(float64(total / limit))
+    if last < 1 && total > 0 {
+        last = 1
+    }
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "data":      mst_id,
+        "total":     total,
+        "page":      page,
+        "last_page": last,
+        "limit":     limit,
+    })
+
+}
+
+func SaveMst_Tst(c *fiber.Ctx) error {
+    mst_tstDataCollection := config.MI.DB.Collection("mst_tst")
+    ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+    mst_tst := new(models.Mst_Tst)
+
+    if err := c.BodyParser(mst_tst); err != nil {
+        log.Println(err)
+        return c.Status(400).JSON(fiber.Map{
+            "success": false,
+            "message": "Failed to parse body",
+            "error":   err,
+        })
+    }
+    result, err := mst_tstDataCollection.InsertOne(ctx, mst_tst)
+    if err != nil {
+        return c.Status(500).JSON(fiber.Map{
+            "success": false,
+            "message": "meta failed to insert",
+            "error":   err,
+        })
+    }
+    return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+        "data":    result,
+        "success": true,
+        "message": "mst inserted successfully",
+    })
+}
+
+func GetTstbyMst(c *fiber.Ctx) error {
+    mst_tstDataCollection := config.MI.DB.Collection("mst_tst")
+    ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+
+    var mst_tst []models.Mst_Tst
+
+    mst := c.Params("mst")
+
+    filter := bson.M{"mst": mst}
+    findOptions := options.Find()
+
+    page, _ := strconv.Atoi(c.Query("page", "1"))
+    limitVal, _ := strconv.Atoi(c.Query("limit", "10"))
+    var limit int64 = int64(limitVal)
+
+    total, _ := mst_tstDataCollection.CountDocuments(ctx, filter)
+
+    findOptions.SetSkip((int64(page) - 1) * limit)
+    findOptions.SetLimit(limit)
+
+    cursor, err := mst_tstDataCollection.Find(ctx, filter, findOptions)
+    defer cursor.Close(ctx)
+
+    if err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "success": false,
+            "message": "mst Not found",
+            "error":   err,
+        })
+    }
+
+    for cursor.Next(ctx) {
+        var msttstdata models.Mst_Tst
+        cursor.Decode(&msttstdata)
+        mst_tst = append(mst_tst, msttstdata)
+    }
+
+    last := math.Ceil(float64(total / limit))
+    if last < 1 && total > 0 {
+        last = 1
+    }
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "data":      mst_tst,
+        "total":     total,
+        "page":      page,
+        "last_page": last,
+        "limit":     limit,
+    })
+
+}

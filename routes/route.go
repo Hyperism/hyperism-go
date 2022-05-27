@@ -39,6 +39,11 @@ func Meta(route fiber.Router) {
     meta.Post("/add", controllers.AddMeta)
     meta.Put("/update/:id", controllers.UpdateMeta)
     meta.Delete("/delete/:id", controllers.DeleteMeta)
-
+    
     meta.Get("/getshader/:id", controllers.GetShader)
+
+    meta.Post("/mst_id", controllers.SaveMst_Id)
+    meta.Post("/mst_tst", controllers.SaveMst_Tst)
+    meta.Get("/mst_id/:id", controllers.GetMstbyId)
+    meta.Get("/mst_tst/:mst", controllers.GetTstbyMst)
 }
