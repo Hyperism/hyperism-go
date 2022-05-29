@@ -1,45 +1,21 @@
 # hyperism-go
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![GolangCI Lint github action](https://github.com/hyperism/hyperism-go/actions/workflows/golangci-lint.yml/badge.svg?branch=main)
 
-Backend REST-api server for hyperism 
+Backend server for hyperism web application
 
 ## Quick Overview
 
-### Step 1. Deploy REST API, Database and IPFS
+### Deploy REST API, Database and IPFS
+
 ```bash
 git clone https://github.com/hyperism/hyperism-go
 cd hyperism-go
-docker-compose up -d
+docker-compose up --force-recreate
 ```
 
-### Step 2. Private IPFS Peer-to-Server Setup
-```bash
-# Enter Server bash
-docker exec -it server.hyperism.com bash
-ipfs bootstrap rm --all
-ipfs id -f='<addrs>' # Keep ipfs address except 127.0.0.1
-exit
-# Enter Peer bash
-docker exec -it peer.hyperism.com bash
-ipfs bootstrap rm --all
-ipfs id -f='<addrs>' # Keep ipfs address except 127.0.0.1
-ipfs bootstrap add <server ipfs address>
-exit
-# Enter Server bash
-docker exec -it server.hyperism.com bash
-ipfs bootstrap add <peer ipfs address>
-exit
-# Local bash
-cd swarmkeygen && go run . generate > ../ipfs/swarm.key && cd ..
-docker cp ipfs/swarm.key server.hyperism.com:/var/ipfsfb
-docker cp ipfs/swarm.key peer.hyperism.com:/var/ipfsfb
-docker-compose restart
-# Check IPFS demo
-./ipfs/e2e/test.sh p2s server.hyperism.com peer.hyperism.com
-```
-### Step 3. Rest API Usage
+### Rest API Usage
+
 ```bash
 GET     localhost:3000/
 POST    localhost:3000/signup
@@ -52,13 +28,13 @@ GET     localhost:3000/meta/:id
 POST    localhost:3000/meta
 PUT     localhost:3000/meta/:id
 DELETE  localhost:3000/meta/:id
-
-
-
+GET     localhost:3000/meta/getbyowner/:owner
+GET     localhost:3000/meta/getbyid/:id
+GET     localhost:3000/meta/mst_id/:id
+POST    localhost:3000/meta/mst_id
+GET     localhost:3000/meta/mst_tst/:mst
+POST    localhost:3000/meta/mst_tst
 ```
-
-# Demo
-TBA..
 
 ## Contact
 
